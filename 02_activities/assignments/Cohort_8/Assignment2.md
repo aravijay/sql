@@ -54,7 +54,10 @@ The store wants to keep customer addresses. Propose two architectures for the CU
 **HINT:** search type 1 vs type 2 slowly changing dimensions. 
 
 ```
-Your answer...
+A Type 1 architecture for CUSTOMER_ADDRESS would overwrite old addresses with new ones if an update is ever required.
+
+A Type 2 architecture would append a new row with a new address. To differentiate two entries with the same customer_id but different addresses, I would
+add a new column that lists the datetime this new value was inputted, and if I ever needed to look up a customer's address, I would just need to sort by the most recent entry.
 ```
 
 ***

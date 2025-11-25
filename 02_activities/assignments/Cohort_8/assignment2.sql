@@ -56,9 +56,9 @@ WHERE cumulative_visit_counter = 1;
 /* 3. Using a COUNT() window function, include a value along with each row of the 
 customer_purchases table that indicates how many different times that customer has purchased that product_id. */
 
-SELECT customer_id, product_id, COUNT(product_id) AS num_times_purchased
-FROM customer_purchases
-GROUP BY customer_id, product_id;
+SELECT customer_id, product_id, market_date, COUNT(*) OVER (PARTITION BY customer_id, product_id
+ORDER BY market_date ROWS UNBOUNDED PRECEDING) AS num_times_purchased_rolling_count
+FROM customer_purchases;
 
 -- String manipulations
 /* 1. Some product names in the product table have descriptions like "Jar" or "Organic". 
@@ -101,17 +101,22 @@ HINT: There are a possibly a few ways to do this query, but if you're struggling
 3) Query the second temp table twice, once for the best day, once for the worst day, 
 with a UNION binding them. */
 
+DROP TABLE IF EXISTS temp.daily_revenue;
+CREATE TABLE temp.daily_revenue AS
+	SELECT *, (quantity*cost_to_customer_per_qty) as revenue_from_sale
+	FROM customer_purchases;
+
 WITH grouped_sales AS 
-	(SELECT market_date, COUNT(market_date) as sales_that_day
-	FROM customer_purchases
-	GROUP BY market_date ORDER BY sales_that_day),
+	(SELECT product_id, vendor_id, market_date, SUM(revenue_from_sale) as sales_that_day
+	FROM temp.daily_revenue
+	GROUP BY market_date),
 	
 	min_sales AS
-	(SELECT market_date, MIN(sales_that_day) as sales_count
+	(SELECT market_date, MIN(sales_that_day) as sales_value
 	FROM grouped_sales),
 	
 	max_sales AS
-	(SELECT market_date, MAX(sales_that_day) as sales_count
+	(SELECT market_date, MAX(sales_that_day) as sales_value
 	FROM grouped_sales)
 	
 SELECT * FROM min_sales
